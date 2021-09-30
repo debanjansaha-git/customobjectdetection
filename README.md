@@ -6,7 +6,7 @@
 
 This code performs a custom object detection on videos recorder by the user.
 
-The algorithm used for object detection is `SSD ResNet101 V1 FPN 640x640` which has been pre-trained on `MS COCO 2017` dataset. We will not be training the whole model, instead we have added a few layers in the end to make our job easier. \
+The algorithm used for object detection is `SSD MobileNet V2 FPNLite 640x640` which has been pre-trained on `MS COCO 2017` dataset. We will not be training the whole model, instead we have added a few layers in the end to make our job easier. \
 More such models can be found in [TensorFlow 2 Detection Model Zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md)   
 
 Interested users are encouraged to try various models. This can be done as follows:
@@ -18,7 +18,7 @@ Interested users are encouraged to try various models. This can be done as follo
     <li>Copy the YYYYYYYY part of the link and use it to replace the value of the MODEL_DATE variable in the code shown below</li>
 </ol>
 
-For example, the download link for the model used below is: `download.tensorflow.org/models/object_detection/tf2/20200711/ssd_resnet101_v1_fpn_640x640_coco17_tpu-8.tar.gz`
+For example, the download link for the model used below is: `download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8.tar.gz`
 
 
 ## Computer Vision
@@ -97,6 +97,11 @@ python
 ```
 If everything has installed properly you should get the message, "2.2.0", or whatever version of TensorFlow you have. This means TensorFlow is up and running and we are ready to setup our workspace. We can now proceed to the next step!
 
+If you have a Tensorflow version less than 2.x, it is recommended that you upgrade the Tensorflow using
+```
+pip install --upgrade tensorflow
+```
+  
 **Note if there is an error with importing, you must install [Visual Studio 2019 with C++ Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16).**
 
 ### Preparing our Workspace and Anaconda Virtual Environment Directory Structure
@@ -227,56 +232,6 @@ this for all the images in the images\test and images\train folders.
 
 We have now gathered our dataset. This means we are ready to generate training data. So onwards to the next step!
 
-### Generating Training Data
-
-Since our images and XML files are prepared, we are ready to create the label_map. It is located in the annotations folder, so navigate to that within File Explorer. After you've located label_map.pbtxt, open it with a Text Editor of your choice. If you plan to use my Pill Classification Model, you don't need to make any changes and you can skip to configuring the pipeline. If you want to make your own custom object detector you must create a similar item for each of your labels. Since my model had two classes of pills, my labelmap looked like 
-```
-item {
-    id: 1
-    name: 'Acetaminophen 325 MG Oral Tablet'
-}
-
-item {
-    id: 2
-    name: 'Ibuprofen 200 MG Oral Tablet'
-}
-```
-For example, if you wanted to make a basketball, football, and baseball detector, your labelmap would look something like
-```
-item {
-    id: 1
-    name: 'basketball'
-}
-
-item {
-    id: 2
-    name: 'football'
-}
-
-item {
-    id: 3
-    name: 'baseball'
-}
-```
-Once you are done with this save as ```label_map.pbtxt``` and exit the text editor. Now we have to generate RECORD files for training. The script to do so is located in C:\TensorFlow\scripts\preprocessing, but we must first install the pandas package with
-
-```
-pip install pandas
-```
-Now we should navigate to the scripts\preprocessing directory with
-
-```
-cd C:\TensorFlow\scripts\preprocessing
-```
-
-Once you are in the correct directory, run these two commands to generate the records
-
-```
-python generate_tfrecord.py -x C:\Tensorflow\workspace\training_demo\images\train -l C:\Tensorflow\workspace\training_demo\annotations\label_map.pbtxt -o C:\Tensorflow\workspace\training_demo\annotations\train.record
-
-python generate_tfrecord.py -x C:\Tensorflow\workspace\training_demo\images\test -l C:\Tensorflow\workspace\training_demo\annotations\label_map.pbtxt -o C:\Tensorflow\workspace\training_demo\annotations\test.record
-```
- After each command you should get a success message stating that the TFRecord File has been created. So now under ```annotations``` there should be a ```test.record``` and ```train.record```. That means we have generated all the data necessary, and we can proceed to configure the training pipeline in the next step
 
 ### Configuring the Training Pipeline
 For this tutorial, we will use a CONFIG File from one of the TensorFlow pre-trained models. There are plenty of models in the [TensorFlow Model Zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md), but we will use the [SSD MobileNet V2 FPNLite 640x640](http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8.tar.gz), as it is on the faster end of the spectrum with decent performance. If you want you can choose a different model, but you will have to alter the steps slightly.
@@ -407,49 +362,3 @@ python model_main_tf2.py --pipeline_config_path models\my_ssd_mobilenet_v2_fpnli
 ```
 
 **Note that if you get an error similar to ```TypeError: object of type <class 'numpy.float64'> cannot be safely interpreted as an integer```, just downgrade your NumPy version. For me, version 1.17.3 worked so you can install it with ```pip install numpy==1.17.3```**
-
-If everything works properly, you should get something similar to this
-
-### Testing out the Finished Model
-
-To test out your model, you can use the sample object detection script I provided called ```TF-image-od.py```. This should be located in ```C:\TensorFlow\workspace\training_demo```. **Update**: I have added video support, argument support, and an extra OpenCV method. The description for each program shall be listed below 
-- ```TF-image-od.py```: This program uses the viz_utils module to visualize labels and bounding boxes. It performs object detection on a single image, and displays it with a cv2 window.
-- ```TF-image-object-counting.py```: This program also performs inference on a single image. I have added my own labelling method with OpenCV which I prefer. It also counts the number of detections and displays it in the top left corner. The final image is, again, displayed with a cv2 window.
-- ```TF-video-od.py```: This program is similar to the ```TF-image-od.py```. However, it performs inference on each individual frame of a video and displays it via cv2 window.
-- ```TF-video-object-counting.py```: This program is similar to ```TF-image-object-counting.py``` and has a similar labelling method with OpenCV. Takes a video for input, and also performs object detection on each frame, displaying the detection count in the top left corner.
-
-The usage of each program looks like 
-
-```
-usage: TF-image-od.py [-h] [--model MODEL] [--labels LABELS] [--image IMAGE] [--threshold THRESHOLD]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --model MODEL         Folder that the Saved Model is Located In
-  --labels LABELS       Where the Labelmap is Located
-  --image IMAGE         Name of the single image to perform detection on
-  --threshold THRESHOLD Minimum confidence threshold for displaying detected objects
-```
-If the model or labelmap is located anywhere other than where I put them, you can specify the location with those arguments. You must also provide an image/video to perform inference on. If you are using my Pill Detection Model, this is unecessary as the default value should be fine. If you are using one of the video scripts, use ```--video``` instead of ```--image``` and provide the path to your test video. For example, the following steps run the sample ```TF-image-od.py``` script.
-
-```
-cd C:\TensorFlow\workspace\training_demo
-```
-
-Then to run the script, just use
-
-```
-python TF-image-od.py
-``` 
-
-**Note that if you get an error similar to ```
-cv2.error: OpenCV(4.3.0) C:\Users\appveyor\AppData\Local\Temp\1\pip-req-build-kv3taq41\opencv\modules\highgui\src\window.cpp:651: error: (-2:Unspecified error) The function is not implemented. Rebuild the library with Windows, GTK+ 2.x or Cocoa support. If you are on Ubuntu or Debian, install libgtk2.0-dev and pkg-config, then re-run cmake or configure script in function 'cvShowImage'
-``` just run ```pip install opencv-python``` and run the program again**
-
-If everything works properly you should get an output similar to this
-<p align="center">
-  <img src="doc/output.png">
-</p>
-
-This means we're done! Over the next few weeks or months, I'll keep working on new programs and keep testing! If you find something cool, feel free to share it, as others can also learn! And if you have any errors, just raise an issue and I'll be happy to take a look at it. Congratulations, and until next time, bye!
-
